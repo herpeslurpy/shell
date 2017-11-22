@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/wait.h>
 #include <readline/history.h>
 #include <readline/readline.h>
 
@@ -61,7 +62,6 @@ void tryExec(char* input){
 		strcat(tmpPath, tokens[i]);
 		strcat(tmpPath, "/");
 		strcat(tmpPath, input);
-		printf("trying *%s*\n", tmpPath);
 		execv(tmpPath, command);
 		tmpPath = ""; i++;
 	}
@@ -98,7 +98,6 @@ char* buildPrompt(){
 }
 
 void process(char* input){
-	//inputRedirect(input);
 	stripArgs(input);
 	if(input[0] == '/'){
 		char* name = getName(command[0]);
@@ -109,6 +108,36 @@ void process(char* input){
 	}
 }
 
+void forkToProcess(char* input){
+	int status;
+	int pid = fork();
+	if(pid < 0){
+		printf("FUCK\n");
+		exit(0);
+	}
+	if(pid == 0){
+		process(input);
+		exit(0);
+	}
+	if(pid > 0){
+		int r;
+		do{
+			r = waitpid(-1, &status, WNOHANG);
+		}while(r >= 0);
+	}
+}
+
+void queueueueCommands(char* cmd){
+	char* queuedCommands[64];
+	queuedCommands[0] = strtok(cmd, ";");
+	int i = 1;
+	while(queuedCommands[i-1]){
+		queuedCommands[i] = strtok(NULL, ";");
+		forkToProcess(queuedCommands[i-1]);
+		i++;
+	}
+}
+
 int main(int argc, char **argv){
 	extern char** environ;
 	findPath(environ);
@@ -116,9 +145,7 @@ int main(int argc, char **argv){
 	int t; size_t maxLen = 128;
 	char* in = NULL; char* prompt = buildPrompt();
 	while(1){
-		//printf("%s%s@%s%s", GRN, username, prompt, NRM);
 		in = readline(prompt);
-
 		if(!in){
 			break;
 		}
@@ -132,7 +159,7 @@ int main(int argc, char **argv){
 			exit(0);
 		}
 		if(pid == 0){
-			process(in);
+			queueueueCommands(in);
 			exit(0);
 		}
 		if(pid > 0){
