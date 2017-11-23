@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <readline/history.h>
 #include <readline/readline.h>
+#include <glob.h>
 
 //colors for fanciness
 #define GRN "\x1B[38;5;10m"
@@ -78,12 +79,18 @@ void stripArgs(char* toStrip){
 			tmp = strcat(homedir, tmp+1);
 			homeRep[0] = '\0';
 		}
-		command[cnt] = tmp;
-//		strcat(command[cnt], "\0");
+
+		glob_t globules;
+		glob(tmp, GLOB_NOCHECK, NULL, &globules);
+
+		int i = 0;
+		while(i < globules.gl_pathc){
+			command[cnt] = globules.gl_pathv[i];
+			cnt++; i++;
+		}
+		//command[cnt] = tmp;
 		tmp = strtok(NULL, " ");
-		cnt++;
 	}
-	command[cnt] = NULL;
 }
 
 char* buildPrompt(){
