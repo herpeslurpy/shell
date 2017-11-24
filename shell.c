@@ -59,7 +59,7 @@ char* getName(char* input){ //Return a pointer to the char after the last /
 void tryExec(char* input){
 	int i = 1;
 	while(tokens[i]){
-		char* tmpPath = (char*) malloc(256);
+		char* tmpPath = (char*) malloc(1024);
 		strcat(tmpPath, tokens[i]);
 		strcat(tmpPath, "/");
 		strcat(tmpPath, input);
@@ -74,23 +74,21 @@ void stripArgs(char* toStrip){
 
 	char* homeRep;
 	int cnt = 0;
-	while(tmp){
-		if((homeRep = strstr(tmp, "~")) != NULL){
-			tmp = strcat(homedir, tmp+1);
-			homeRep[0] = '\0';
-		}
 
-		glob_t globules;
-		glob(tmp, GLOB_NOCHECK, NULL, &globules);
+	glob_t globules;
+	while(tmp){
+		glob(tmp, GLOB_NOCHECK | GLOB_TILDE, NULL, &globules);
 
 		int i = 0;
 		while(i < globules.gl_pathc){
-			command[cnt] = globules.gl_pathv[i];
+			command[cnt] = (char*)malloc(64);
+			strcpy(command[cnt], globules.gl_pathv[i]);
 			cnt++; i++;
 		}
-		//command[cnt] = tmp;
+		globfree(&globules);
 		tmp = strtok(NULL, " ");
 	}
+	command[cnt] = NULL;
 }
 
 char* buildPrompt(){
