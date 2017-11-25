@@ -15,7 +15,6 @@
 
 char* path;
 char* username;
-char* homedir;
 char* tokens[64]; //tokenized path
 char* command[64]; //tokenized command, split args and stuff
 
@@ -35,8 +34,6 @@ void findPath(char** env){
 			path = env[i];
 		if(!strncmp(env[i], "USER=", 5)) //get the username for the prompt while we're at it
 			username = strtok(env[i], "USER=");
-		if(!strncmp(env[i], "HOME=", 5))
-			homedir = strtok(env[i], "HOME=");
 		i++;
 	}
 }
@@ -151,6 +148,23 @@ void queueueueCommands(char* cmd){
 	}
 }
 
+int checkCD(char* in){
+    if(in[0] == 'c' && in[1] == 'd'){
+        chdir(in+3);
+		return 1;
+	}
+	return 0;
+}
+
+char* newPrompt(char* in){
+	if(strstr(in, "PS1="))
+		if(strstr(in, "std"))
+			return buildPrompt();
+		else
+			return in+4;
+	return in;
+}
+
 int main(int argc, char **argv){
 	extern char** environ;
 	findPath(environ);
@@ -167,10 +181,14 @@ int main(int argc, char **argv){
         if(!in){
             break;
         }
-        if(in[0] == 'c' && in[1] == 'd'){
-            chdir(in+3);
+
+		if(checkCD(in))
 			continue;
-        }
+
+		if(strstr(in, "PS1=")){
+			prompt = newPrompt(in);
+			continue;
+		}
 
 		char* expandedHistory[1024];
 		history_expand(in, expandedHistory);
