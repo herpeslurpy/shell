@@ -74,7 +74,7 @@ void tryExec(char* input){
 		execv(tmpPath, command);
 		tmpPath = ""; i++;
 	}
-	printf("Command not found\n");
+	printf("%s: Command not found\n", input);
 }
 
 void stripArgs(char* toStrip){
@@ -115,7 +115,7 @@ void process(char* input){
 	if(input[0] == '/'){
 		char* name = getName(command[0]);
 		execv(command[0], command);
-		printf("Command not found\n");
+		printf("%s: Command not found\n", command[0]);
 	}else{
 		tryExec(command[0]);
 	}
@@ -162,9 +162,14 @@ int main(int argc, char **argv){
 	read_history(histPath);
 
 	while(1){
+		in = (char*)malloc(1024);
 		in = readline(prompt);
         if(!in){
             break;
+        }
+        if(in[0] == 'c' && in[1] == 'd'){
+            chdir(in+3);
+			continue;
         }
 
 		char* expandedHistory[1024];
