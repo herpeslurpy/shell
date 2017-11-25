@@ -7,6 +7,7 @@
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <glob.h>
+#include <fcntl.h>
 
 //colors for fanciness
 #define GRN "\x1B[38;5;10m"
@@ -19,6 +20,13 @@ char* tokens[64]; //tokenized path
 char* command[64]; //tokenized command, split args and stuff
 
 char* inputRedirects[64];
+
+void checkthatbitchforerrors(char* msg, int cond){
+	if(cond){
+		perror(msg);
+		exit(0);
+	}
+}
 
 void findPath(char** env){
 	int i = 0;
@@ -149,16 +157,23 @@ int main(int argc, char **argv){
 	tokenizePath();
 	int t; size_t maxLen = 128;
 	char* in = NULL; char* prompt = buildPrompt();
+
+	char histPath[64]; sprintf(histPath, "/home/%s/.psh_history", username);
+	read_history(histPath);
+
 	while(1){
 		in = readline(prompt);
+		char* expandedHistory[1024];
+		history_expand(in, expandedHistory);
+		strcpy(in, expandedHistory[0]);
 		if(!in){
 			break;
 		}
 		add_history(in);
 
 		int status;
-		int pid = fork()
-;
+		int pid = fork();
+
 		if(pid < 0){
 			printf("FUCK\n");
 			exit(0);
@@ -174,5 +189,6 @@ int main(int argc, char **argv){
 			}while(r >= 0);
 		}
 	}
+	write_history(histPath);
 	printf("^D\n");
 }
