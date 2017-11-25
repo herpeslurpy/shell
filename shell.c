@@ -89,7 +89,7 @@ void stripArgs(char* toStrip){
 
 		int i = 0;
 		while(i < globules.gl_pathc){
-			command[cnt] = (char*)malloc(64);
+			command[cnt] = (char*)malloc(256);
 			strcpy(command[cnt], globules.gl_pathv[i]);
 			cnt++; i++;
 		}
@@ -163,12 +163,13 @@ int main(int argc, char **argv){
 
 	while(1){
 		in = readline(prompt);
+        if(!in){
+            break;
+        }
+
 		char* expandedHistory[1024];
 		history_expand(in, expandedHistory);
 		strcpy(in, expandedHistory[0]);
-		if(!in){
-			break;
-		}
 		add_history(in);
 
 		int status;
