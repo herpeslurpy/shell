@@ -82,11 +82,15 @@ void stripArgs(char* toStrip){
 
 	glob_t globules;
 	while(tmp){
+		char* envvar = getenv(tmp+1);
+		if(envvar)
+			tmp = envvar;
+
 		glob(tmp, GLOB_NOCHECK | GLOB_TILDE, NULL, &globules);
 
 		int i = 0;
 		while(i < globules.gl_pathc){
-			command[cnt] = (char*)malloc(256);
+			command[cnt] = (char*)malloc(2048); //fucking $LS_COLORS
 			strcpy(command[cnt], globules.gl_pathv[i]);
 			cnt++; i++;
 		}
