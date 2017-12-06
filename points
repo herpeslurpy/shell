@@ -1,0 +1,17 @@
+	1 Can run an executable
+	1 You search the path for the executable
+	1 Knows how to change directory
+	1 Bang last command 
+	1 Bang # command
+	1 Queue commands
+	+1 Can have lots of semicolons
+	1 Catch Keyboard interrupt
+	1 Replace "~" with the home directory
+	1 Control-L clears the screen
+	1 Saves and reloads history to a file
+	1 Prompt has hostname or username.
+
+	2 Expands enviornment variables on the command line
+	2 Does filename expansion "glob" (Hint:  Use the built in glob.)
+	2 Change Prompt
+	2 Tab Completion and Arrow History

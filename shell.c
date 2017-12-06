@@ -8,6 +8,7 @@
 #include <readline/readline.h>
 #include <glob.h>
 #include <fcntl.h>
+#include <signal.h>
 
 //colors for fanciness
 #define GRN "\x1B[38;5;10m"
@@ -17,8 +18,8 @@ char* path;
 char* username;
 char* tokens[64]; //tokenized path
 char* command[64]; //tokenized command, split args and stuff
-
 char* inputRedirects[64];
+volatile sig_atomic_t flag = 0;
 
 void checkthatbitchforerrors(char* msg, int cond){
 	if(cond){
@@ -90,7 +91,7 @@ void stripArgs(char* toStrip){
 
 		int i = 0;
 		while(i < globules.gl_pathc){
-			command[cnt] = (char*)malloc(2048); //fucking $LS_COLORS
+			command[cnt] = (char*)malloc(2048); //fucking $LS_COLORS is so long
 			strcpy(command[cnt], globules.gl_pathv[i]);
 			cnt++; i++;
 		}
@@ -105,7 +106,7 @@ char* buildPrompt(){
 	strcat(tmp, GRN);
 	strcat(tmp, username);
 	strcat(tmp, "@");
-	strcat(tmp, "psh>");
+	strcat(tmp, "fuck>");
 	strcat(tmp, NRM);
 	strcat(tmp, "\0");
 	return tmp;
@@ -154,8 +155,13 @@ void queueueueCommands(char* cmd){
 
 int checkCD(char* in){
     if(in[0] == 'c' && in[1] == 'd'){
-        chdir(in+3);
-		return 1;
+		if(strlen(in)==2){
+			chdir(getenv("HOME"));
+			return 1;
+		}
+        if(!chdir(in+3))
+			return 1;
+		perror("Directory doesn't exist");
 	}
 	return 0;
 }
@@ -169,6 +175,10 @@ char* newPrompt(char* in){
 	return in;
 }
 
+void catchIntrpt(int sig){
+	flag = 1;
+}
+
 int main(int argc, char **argv){
 	extern char** environ;
 	findPath(environ);
@@ -178,13 +188,26 @@ int main(int argc, char **argv){
 
 	char histPath[64]; sprintf(histPath, "/home/%s/.psh_history", username);
 	read_history(histPath);
+	
+	signal(SIGINT, catchIntrpt);
 
 	while(1){
-		in = (char*)malloc(1024);
 		in = readline(prompt);
         if(!in){
             break;
         }
+		if(flag){
+			flag = 0;
+			continue;
+		}
+		if(!strcmp(in, "!"))
+			strcpy(in, "!!");
+
+		char* expandedHistory[1024];
+		history_expand(in, expandedHistory);
+		strcpy(in, expandedHistory[0]);
+		add_history(in);
+		write_history(histPath);
 
 		if(checkCD(in))
 			continue;
@@ -193,11 +216,6 @@ int main(int argc, char **argv){
 			prompt = newPrompt(in);
 			continue;
 		}
-
-		char* expandedHistory[1024];
-		history_expand(in, expandedHistory);
-		strcpy(in, expandedHistory[0]);
-		add_history(in);
 
 		int status;
 		int pid = fork();
@@ -216,7 +234,7 @@ int main(int argc, char **argv){
 				r = waitpid(-1, &status, WNOHANG);
 			}while(r >= 0);
 		}
+		free(in);
 	}
-	write_history(histPath);
 	printf("^D\n");
 }
